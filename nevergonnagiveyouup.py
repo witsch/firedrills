@@ -1,5 +1,6 @@
 # from https://github.com/robsoncouto/arduino-songs/blob/master/nevergonnagiveyouup/nevergonnagiveyouup.ino
 
+from dataclasses import dataclass
 from pysine import sine
 from time import sleep
 
@@ -184,7 +185,13 @@ melody = (
 wholenote = (60000 * 4) / tempo
 
 
-def play():
+@dataclass
+class Note:
+    frequency: int
+    duration: int
+
+
+def notes():
   #  iterate over the notes of the melody.
   #  Remember, the array is twice the number of notes (notes + durations)
   for thisNote in range(0, len(melody), 2):
@@ -199,10 +206,16 @@ def play():
       noteDuration = (wholenote) / abs(divider);
       noteDuration *= 1.5; #  increases the duration in half for dotted notes
 
-    #  we only play the note for 90% of the duration, leaving 10% as a pause
-    sine(frequency=melody[thisNote], duration=noteDuration * 0.9 / 1000);
+    yield Note(frequency=melody[thisNote], duration=noteDuration)
 
+
+def play():
+  for note in notes():
+    print(note)
+    #  we only play the note for 90% of the duration, leaving 10% as a pause
+    sine(frequency=note.frequency, duration=note.duration * 0.9 / 1000)
     #  Wait for the specief duration before playing the next note.
-    sleep(noteDuration * 0.1 / 1000);
+    sleep(note.duration * 0.1 / 1000)
+
 
 play()
