@@ -307,8 +307,9 @@ async def play(session):
         async with TaskGroup() as group:
             param = f'{note.frequency}hz'
             url = f'http://3u.ro/rick?{param}'
-            group.create_task(session.get(url))
-            group.create_task(to_thread(sine, frequency=note.frequency, duration=duration))
+            if note.frequency:
+                group.create_task(session.get(url))
+                group.create_task(to_thread(sine, frequency=note.frequency, duration=duration))
             group.create_task(sleep(note.duration / 1000))
         # Wait for the specief duration before playing the next note.
         sing &= word != '...'
