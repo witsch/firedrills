@@ -1,8 +1,9 @@
 # from https://github.com/robsoncouto/arduino-songs/blob/master/nevergonnagiveyouup/nevergonnagiveyouup.ino
 
+from asyncio import TaskGroup, run, sleep, to_thread
+from aiohttp import ClientSession
 from dataclasses import dataclass
 from pysine import sine
-from time import sleep
 
 
 NOTE_B0  = 31
@@ -293,7 +294,7 @@ def words():
             yield word
 
 
-def play():
+async def play(session):
     sing, pause = False, False
     w = words()
     for note in notes():
@@ -302,11 +303,21 @@ def play():
         word = next(w) if sing else '...'
         print(f'{str(note):50s} {word}')
         # we only play the note for 90% of the duration, leaving 10% as a pause
-        sine(frequency=note.frequency, duration=note.duration * 0.9 / 1000)
+        duration = note.duration * 0.9 / 1000
+        async with TaskGroup() as group:
+            param = f'{note.frequency}hz'
+            url = f'http://3u.ro/rick?{param}'
+            group.create_task(session.get(url))
+            group.create_task(to_thread(sine, frequency=note.frequency, duration=duration))
+            group.create_task(sleep(note.duration / 1000))
         # Wait for the specief duration before playing the next note.
-        sleep(note.duration * 0.1 / 1000)
         sing &= word != '...'
         pause = note.frequency == REST
 
 
-play()
+async def main():
+    async with ClientSession() as session:
+        await play(session)
+
+
+run(main())
