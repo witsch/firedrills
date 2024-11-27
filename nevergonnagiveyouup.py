@@ -294,23 +294,32 @@ def words():
             yield word
 
 
-async def play(session):
+async def at(time, coro):
+    await sleep(time / 1000)
+    await coro
+
+
+async def say(note, word):
+    print(f'{str(note):50s} {word}')
+
+
+async def play(session, group):
     sing, pause = False, False
+    start = 1000
     w = words()
     for note in notes():
         if pause and note.frequency != REST:
             sing = True
         word = next(w) if sing else '...'
-        print(f'{str(note):50s} {word}')
         # we only play the note for 90% of the duration, leaving 10% as a pause
         duration = note.duration * 0.9 / 1000
-        async with TaskGroup() as group:
+        if note.frequency:
             param = f'{note.frequency}hz'
             url = f'http://3u.ro/rick?{param}'
-            if note.frequency:
-                group.create_task(session.get(url))
-                group.create_task(to_thread(sine, frequency=note.frequency, duration=duration))
-            group.create_task(sleep(note.duration / 1000))
+            group.create_task(at(start, session.get(url)))
+            group.create_task(at(start, to_thread(sine, frequency=note.frequency, duration=duration)))
+            group.create_task(at(start, say(note, word)))
+        start += note.duration
         # Wait for the specief duration before playing the next note.
         sing &= word != '...'
         pause = note.frequency == REST
@@ -318,7 +327,8 @@ async def play(session):
 
 async def main():
     async with ClientSession() as session:
-        await play(session)
+        async with TaskGroup() as group:
+            await play(session, group)
 
 
 run(main())
