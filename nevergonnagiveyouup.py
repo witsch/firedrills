@@ -303,32 +303,29 @@ async def say(note, word):
     print(f'{str(note):50s} {word}')
 
 
-async def play(session, group):
+async def play():
     sing, pause = False, False
     start = 1000
     w = words()
-    for note in notes():
-        if pause and note.frequency != REST:
-            sing = True
-        word = next(w) if sing else '...'
-        # we only play the note for 90% of the duration, leaving 10% as a pause
-        duration = note.duration * 0.9 / 1000
-        if note.frequency:
-            param = f'{note.frequency}hz'
-            url = f'http://3u.ro/rick?{param}'
-            group.create_task(at(start, session.get(url)))
-            group.create_task(at(start, to_thread(sine, frequency=note.frequency, duration=duration)))
-            group.create_task(at(start, say(note, word)))
-        start += note.duration
-        # Wait for the specief duration before playing the next note.
-        sing &= word != '...'
-        pause = note.frequency == REST
-
-
-async def main():
     async with ClientSession() as session:
         async with TaskGroup() as group:
-            await play(session, group)
+            schedule = lambda coro: group.create_task(at(start, coro))
+            for note in notes():
+                if pause and note.frequency != REST:
+                    sing = True
+                word = next(w) if sing else '...'
+                # we only play the note for 90% of the duration, leaving 10% as a pause
+                duration = note.duration * 0.9 / 1000
+                url = f'http://3u.ro/rick?{note.frequency}hz...{word}'
+                if note.frequency:
+                    schedule(session.get(url))
+                    schedule(to_thread(sine, frequency=note.frequency, duration=duration))
+                    schedule(say(note, word))
+                start += note.duration
+                # Wait for the specief duration before playing the next note.
+                sing &= word != '...'
+                pause = note.frequency == REST
+            print("let's roll...")
 
 
-run(main())
+run(play())
