@@ -206,13 +206,105 @@ def notes():
         yield Note(frequency=melody[thisNote], duration=noteDuration)
 
 
+def words():
+    lyrics = """
+        We're no strangers to love
+        You know the rules and so do I
+        A full commitment's what I'm thinking of
+        You wouldn't get this from any other guy
+        I just wanna tell you how I'm feeling
+        Gotta make you understand
+        Never gonna give you up
+        Never gonna let you down
+        Never gonna run around and desert you
+        Never gonna make you cry
+        Never gonna say goodbye
+        Never gonna tell a lie and hurt you
+        We've known each other for so long
+        Your heart's been aching but you're too shy to say it
+        Inside we both know what's been going on
+        We know the game and we're gonna play it
+        And if you ask me how I'm feeling
+        Don't tell me you're too blind to see
+        Never gonna give you up
+        Never gonna let you down
+        Never gonna run around and desert you
+        Never gonna make you cry
+        Never gonna say goodbye
+        Never gonna tell a lie and hurt you
+        Never gonna give you up
+        Never gonna let you down
+        Never gonna run around and desert you
+        Never gonna make you cry
+        Never gonna say goodbye
+        Never gonna tell a lie and hurt you
+        Never gonna give, never gonna give
+        (Give you up)
+        (Ooh) Never gonna give, never gonna give
+        (Give you up)
+        We've known each other for so long
+        Your heart's been aching but you're too shy to say it
+        Inside we both know what's been going on
+        We know the game and we're gonna play it
+        I just wanna tell you how I'm feeling
+        Gotta make you understand
+        Never gonna give you up
+        Never gonna let you down
+        Never gonna run around and desert you
+        Never gonna make you cry
+        Never gonna say goodbye
+        Never gonna tell a lie and hurt you
+        Never gonna give you up
+        Never gonna let you down
+        Never gonna run around and desert you
+        Never gonna make you cry
+        Never gonna say goodbye
+        Never gonna tell a lie and hurt you
+        Never gonna give you up
+        Never gonna let you down
+        Never gonna run around and desert you
+        Never gonna make you cry """
+    separations = {
+        'Gotta': 'Got-/-ta',
+        'Inside': 'In-/-side',
+        'Never': 'Ne-/-ver',
+        'aching': 'a-/-ching',
+        'any': 'a-/-ny',
+        'around': 'a-/-round',
+        "commitment's": "com-/-mit-/-ment's",
+        'desert': 'de-/-sert',
+        'feeling': 'fee-/-ling',
+        'gonna': 'gon-/-na',
+        'goodbye': 'good-/-bye',
+        'love': 'lo-/-oho-/-hove',
+        'never': 'ne-/-ver',
+        'other': 'ot-/-her',
+        'rules': 'ru-/-hules',
+        'strangers': 'stran-/-gers',
+        'thinking': 'thin-/-king',
+        'understand': 'un-/-der-/-stand',
+        'wanna': 'wan-/-na'}
+    for word in lyrics.strip().replace('\n', ' ... ').split():
+        if word in separations:
+            yield from separations[word].split('/')
+        else:
+            yield word
+
+
 def play():
+    sing, pause = False, False
+    w = words()
     for note in notes():
-        print(note)
-        #  we only play the note for 90% of the duration, leaving 10% as a pause
+        if pause and note.frequency != REST:
+            sing = True
+        word = next(w) if sing else '...'
+        print(f'{str(note):50s} {word}')
+        # we only play the note for 90% of the duration, leaving 10% as a pause
         sine(frequency=note.frequency, duration=note.duration * 0.9 / 1000)
-        #  Wait for the specief duration before playing the next note.
+        # Wait for the specief duration before playing the next note.
         sleep(note.duration * 0.1 / 1000)
+        sing &= word != '...'
+        pause = note.frequency == REST
 
 
 play()
