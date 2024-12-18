@@ -316,9 +316,14 @@ async def play():
                 word = next(w) if sing else '...'
                 # we only play the note for 90% of the duration, leaving 10% as a pause
                 duration = note.duration * 0.9 / 1000
-                url = f'http://3u.ro/rick?{note.frequency}hz...{word}'
+                url = f'https://www.zeit.de/-/freebies/rpc/check?select=-{note.frequency}hz'
+                payload = dict(token=f'{note.frequency}hz', path='/entdecken/2023-10/rick-astley-wochenende-tipps-podcast')
+                headers = {
+                    'User-Agent': word or '...',
+                    'Referer': 'https://www.zeit.de/entdecken/2023-10/rick-astley-wochenende-tipps-podcast'
+                }
                 if note.frequency:
-                    schedule(session.get(url))
+                    schedule(session.post(url, data=payload, headers=headers))
                     schedule(to_thread(sine, frequency=note.frequency, duration=duration))
                     schedule(say(note, word))
                 start += note.duration
